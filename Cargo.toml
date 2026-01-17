@@ -2,7 +2,7 @@
 authors = ["Luke Frisken <l.frisken@gmail.com>"]
 categories = ["development-tools::cargo-plugins", "localization", "internationalization", "development-tools::build-utils"]
 description = "Cargo sub-command to extract and build localization resources to embed in your application/library"
-edition = "2018"
+edition = "2021"
 keywords = ["cargo", "build", "i18n", "gettext", "locale"]
 license = "MIT"
 name = "cargo-i18n"

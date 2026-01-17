@@ -2,7 +2,7 @@
 authors = ["Luke Frisken <l.frisken@gmail.com>"]
 categories = ["localization", "internationalization", "development-tools::build-utils", "wasm"]
 description = "Traits and macros to conveniently embed localization assets into your application binary or library in order to localize it at runtime."
-edition = "2018"
+edition = "2021"
 exclude = ["i18n/", "i18n.toml"]
 keywords = ["embed", "macro", "i18n", "gettext", "fluent"]
 license = "MIT"

@@ -2,7 +2,7 @@
 authors = ["Luke Frisken <l.frisken@gmail.com>"]
 categories = ["localization", "internationalization"]
 description = "This library contains the configuration stucts (along with their parsing functions) for the cargo-i18n tool/system."
-edition = "2018"
+edition = "2021"
 keywords = ["cargo", "build", "i18n", "gettext", "locale"]
 license = "MIT"
 name = "i18n-config"
