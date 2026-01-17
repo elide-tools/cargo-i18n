@@ -457,7 +457,10 @@ use std::{
 };
 
 use fluent_langneg::{negotiate_languages, NegotiationStrategy};
-use log::{debug, error};
+
+#[cfg(feature = "log")]
+use log::debug;
+
 use thiserror::Error;
 
 pub use unic_langid;
@@ -578,7 +581,9 @@ impl DefaultLocalizer<'static> {
             .i18n_assets
             .subscribe_changed(std::sync::Arc::new(move || {
                 if let Err(error) = loader.reload(assets) {
-                    log::error!("Error autoreloading assets: {error:?}")
+                    if cfg!(feature = "log") {
+                        debug!("Error reloading assets: {error:?}")
+                    }
                 }
             }))?;
         self.watchers.push(watcher);
@@ -615,9 +620,11 @@ pub fn select(
         NegotiationStrategy::Filtering,
     );
 
-    log::debug!("Requested Languages: {:?}", requested_languages);
-    log::debug!("Available Languages: {:?}", available_languages);
-    log::debug!("Supported Languages: {:?}", supported_languages);
+    if cfg!(feature = "log") {
+        log::debug!("Requested Languages: {:?}", requested_languages);
+        log::debug!("Available Languages: {:?}", available_languages);
+        log::debug!("Supported Languages: {:?}", supported_languages);
+    }
 
     let supported_languages: Vec<unic_langid::LanguageIdentifier> =
         supported_languages.into_iter().cloned().collect();
@@ -660,7 +667,9 @@ pub trait LanguageLoader {
         let language_id_string = language_id.to_string();
         let file_path = format!("{}/{}", language_id_string, self.language_file_name());
 
-        log::debug!("Attempting to load language file: \"{}\"", &file_path);
+        if cfg!(feature = "log") {
+            log::debug!("Attempting to load language file: \"{}\"", &file_path);
+        }
 
         let files = i18n_assets.get_files(file_path.as_ref());
         (file_path, files)
@@ -695,10 +704,12 @@ pub trait LanguageLoader {
 
                 match language_file_name {
                     Some(language_file_name) => {
-                        debug!(
-                            "Searching for available languages, found language file: \"{0}\"",
-                            &filename
-                        );
+                        if cfg!(feature = "log") {
+                            debug!(
+                                "Searching for available languages, found language file: \"{0}\"",
+                                &filename
+                            );
+                        }
                         if language_file_name == self.language_file_name() {
                             locale
                         } else {

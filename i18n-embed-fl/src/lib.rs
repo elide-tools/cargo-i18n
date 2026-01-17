@@ -54,6 +54,37 @@ impl Parse for FlAttr {
     }
 }
 
+#[derive(Debug, Eq, PartialEq)]
+enum FlDomain {
+    /// A domain ID was provided.
+    Domain(syn::Lit),
+    /// No domain ID was provided.
+    None,
+}
+
+// Parses in the form `domain: "domain_id"`, or nothing, so as not to be ambiguous with `message_id`.
+impl Parse for FlDomain {
+    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+        if !input.is_empty() {
+            let lookahead = input.fork();
+            let ident = lookahead.parse::<syn::Ident>();
+            if ident.is_err() {
+                return Ok(FlDomain::None);
+            }
+            if lookahead.parse::<syn::Ident>()?.to_string() == "domain" {
+                input.parse::<syn::Ident>()?;
+                input.parse::<syn::Token![:]>()?;
+                let literal = input.parse::<syn::Lit>()?;
+                Ok(FlDomain::Domain(literal))
+            } else {
+                Ok(FlDomain::None)
+            }
+        } else {
+            Ok(FlDomain::None)
+        }
+    }
+}
+
 #[derive(Debug)]
 enum FlArgs {
     /// `fl!(LOADER, "message", "optional-attribute", args)` where `args` is a
@@ -150,6 +181,7 @@ impl Parse for FlArgs {
 /// Input for the [fl()] macro.
 struct FlMacroInput {
     fluent_loader: syn::Expr,
+    domain: FlDomain,
     message_id: syn::Lit,
     attr: FlAttr,
     args: FlArgs,
@@ -159,12 +191,17 @@ impl Parse for FlMacroInput {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         let fluent_loader = input.parse()?;
         input.parse::<syn::Token![,]>()?;
+        let domain = input.parse()?;
+        if domain != FlDomain::None {
+            input.parse::<syn::Token![,]>()?;
+        }
         let message_id = input.parse()?;
         let attr = input.parse()?;
         let args = input.parse()?;
 
         Ok(Self {
             fluent_loader,
+            domain,
             message_id,
             attr,
             args,
@@ -398,12 +435,32 @@ pub fn fl(input: TokenStream) -> TokenStream {
 
     let fluent_loader = input.fluent_loader;
     let message_id = input.message_id;
-
-    let domain = {
-        let manifest = find_crate::Manifest::new().expect("Error reading Cargo.toml");
-        manifest.crate_package().map(|pkg| pkg.name).unwrap_or(
-            std::env::var("CARGO_PKG_NAME").expect("Error fetching `CARGO_PKG_NAME` env"),
-        )
+    let domain_id = input.domain;
+    let domain_str = match &domain_id {
+        FlDomain::Domain(literal) => match literal {
+            syn::Lit::Str(string_lit) => string_lit.value(),
+            unexpected_lit => {
+                emit_error! {
+                    unexpected_lit,
+                    "fl!() `domain` should be a literal rust string"
+                };
+                unreachable!()
+            }
+        },
+        FlDomain::None => String::new(),
+    };
+    let domain = if cfg!(feature = "domain-from-crate") {
+        // if domain literal is non-empty, prefer that
+        if !domain_str.is_empty() {
+            domain_str
+        } else {
+            let manifest = find_crate::Manifest::new().expect("Error reading Cargo.toml");
+            manifest.crate_package().map(|pkg| pkg.name).unwrap_or(
+                std::env::var("CARGO_PKG_NAME").expect("Error fetching `CARGO_PKG_NAME` env"),
+            )
+        }
+    } else {
+        domain_str
     };
 
     let domain_data = if let Some(domain_data) = domains().get(&domain) {
