@@ -584,7 +584,7 @@ pub fn fl(input: TokenStream) -> TokenStream {
     // Same procedure for attributes
     let mut checked_message_has_attribute = false;
 
-    let gen = match input.args {
+    let r#gen = match input.args {
         FlArgs::HashMap(args_hash_map) => {
             if attr_lit.is_none() {
                 quote! {
@@ -626,7 +626,7 @@ pub fn fl(input: TokenStream) -> TokenStream {
                         .is_some();
                 }
 
-                let gen = quote! {
+                let r#gen = quote! {
                     (#fluent_loader).get_args_concrete(
                         #message_id,
                         {
@@ -636,7 +636,7 @@ pub fn fl(input: TokenStream) -> TokenStream {
                         })
                 };
 
-                gen
+                r#gen
             } else {
                 if let Some(message_id_str) = &message_id_string {
                     if let Some(attr_id_str) = &attr_str {
@@ -655,7 +655,7 @@ pub fn fl(input: TokenStream) -> TokenStream {
                     }
                 }
 
-                let gen = quote! {
+                let r#gen = quote! {
                     (#fluent_loader).get_attr_args_concrete(
                         #message_id,
                         #attr_lit,
@@ -666,7 +666,7 @@ pub fn fl(input: TokenStream) -> TokenStream {
                         })
                 };
 
-                gen
+                r#gen
             }
         }
     };
@@ -729,7 +729,7 @@ pub fn fl(input: TokenStream) -> TokenStream {
         }
     }
 
-    gen.into()
+    r#gen.into()
 }
 
 fn fuzzy_message_suggestions(

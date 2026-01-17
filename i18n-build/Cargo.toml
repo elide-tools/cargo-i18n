@@ -22,7 +22,7 @@ maintenance = { status = "actively-developed" }
 subprocess = "0.2"
 anyhow = { workspace = true }
 thiserror = { workspace = true } 
-tr = { workspace = true, default-features = false, features = ["gettext"] }
+tr = { workspace = true, features = ["gettext"] }
 walkdir = { workspace = true }
 i18n-embed = { workspace = true, features = ["gettext-system", "desktop-requester"], optional = true }
 i18n-config = { workspace = true }
