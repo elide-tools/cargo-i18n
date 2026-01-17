@@ -1,7 +1,7 @@
 use fluent::concurrent::FluentBundle;
 use fluent::{FluentAttribute, FluentMessage, FluentResource};
 use fluent_syntax::ast::{CallArguments, Expression, InlineExpression, Pattern, PatternElement};
-use i18n_embed::{fluent::FluentLanguageLoader, FileSystemAssets, LanguageLoader};
+use i18n_embed::{FileSystemAssets, LanguageLoader, fluent::FluentLanguageLoader};
 use proc_macro::TokenStream;
 use proc_macro_error2::{abort, emit_error, proc_macro_error};
 use quote::quote;
@@ -128,7 +128,7 @@ impl Parse for FlArgs {
                         return Err(syn::Error::new(
                             expr.left.span(),
                             "fl!() unable to parse argument identifier",
-                        ))
+                        ));
                     }
                 }
                 .clone();

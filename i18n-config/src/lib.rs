@@ -158,7 +158,10 @@ impl<'a> Crate<'a> {
             Some(config) => {
                 if let Some(gettext_config) = &config.gettext {
                     if gettext_config.extract_to_parent {
-                        debug!("Resolving active config for {0}, extract_to_parent is true, so attempting to obtain parent config.", self);
+                        debug!(
+                            "Resolving active config for {0}, extract_to_parent is true, so attempting to obtain parent config.",
+                            self
+                        );
 
                         if self.parent.is_none() {
                             return Err(I18nConfigError::NoParentCrate(
@@ -256,7 +259,10 @@ impl<'a> Crate<'a> {
                             debug!("The parent of {0} at path {1:?} is a workspace", self, path);
                         }
                         I18nConfigError::NotACrate(path, WhyNotCrate::NoCargoToml) => {
-                            debug!("The parent of {0} at path {1:?} is not a valid crate with a Cargo.toml", self, path);
+                            debug!(
+                                "The parent of {0} at path {1:?} is not a valid crate with a Cargo.toml",
+                                self, path
+                            );
                         }
                         _ => {
                             error!(
@@ -301,7 +307,10 @@ impl<'a> Crate<'a> {
                     if this_is_subcrate {
                         Some(crt)
                     } else {
-                        debug!("Parent {0} does not have {1} correctly listed as one of its subcrates (currently: {2:?}) in its i18n config.", crt, self, config.subcrates);
+                        debug!(
+                            "Parent {0} does not have {1} correctly listed as one of its subcrates (currently: {2:?}) in its i18n config.",
+                            crt, self, config.subcrates
+                        );
                         None
                     }
                 }

@@ -12,7 +12,7 @@ pub use fluent_langneg::NegotiationStrategy;
 pub use i18n_embed_impl::fluent_language_loader;
 
 use fluent::{
-    bundle::FluentBundle, FluentArgs, FluentAttribute, FluentMessage, FluentResource, FluentValue,
+    FluentArgs, FluentAttribute, FluentMessage, FluentResource, FluentValue, bundle::FluentBundle,
 };
 use fluent_syntax::ast::{self, Pattern};
 use intl_memoizer::concurrent::IntlLangMemoizer;

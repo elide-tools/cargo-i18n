@@ -456,7 +456,7 @@ use std::{
     string::FromUtf8Error,
 };
 
-use fluent_langneg::{negotiate_languages, NegotiationStrategy};
+use fluent_langneg::{NegotiationStrategy, negotiate_languages};
 
 #[cfg(feature = "log")]
 use log::debug;

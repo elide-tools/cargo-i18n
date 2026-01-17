@@ -6,11 +6,11 @@ use crate::util;
 use i18n_config::{Crate, GettextConfig, I18nConfigError};
 
 use std::ffi::OsStr;
-use std::fs::{create_dir_all, File};
+use std::fs::{File, create_dir_all};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result, anyhow};
 use log::{debug, info};
 use subprocess::Exec;
 use tr::tr;

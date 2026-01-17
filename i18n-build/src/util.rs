@@ -6,7 +6,7 @@ use std::path::Path;
 use std::process::Command;
 
 use crate::error::PathError;
-use anyhow::{ensure, Context, Result};
+use anyhow::{Context, Result, ensure};
 use tr::tr;
 
 /// Run the specified command, check that it's output was reported as successful.

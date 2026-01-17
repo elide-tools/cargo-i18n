@@ -64,8 +64,8 @@ pub fn run(crt: Crate) -> Result<()> {
 #[cfg(feature = "localize")]
 mod localize_feature {
     use i18n_embed::{
-        gettext::{gettext_language_loader, GettextLanguageLoader},
         DefaultLocalizer,
+        gettext::{GettextLanguageLoader, gettext_language_loader},
     };
     use std::sync::OnceLock;
 
