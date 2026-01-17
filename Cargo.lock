@@ -416,7 +416,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "54f0d287c53ffd184d04d8677f590f4ac5379785529e5e08b1c8083acdd5c198"
 dependencies = [
  "memchr",
- "thiserror 2.0.17",
+ "thiserror",
 ]
 
 [[package]]
@@ -512,7 +512,7 @@ checksum = "e5274423e17b7c9fc20b6e7e208532f9b19825d82dfd615708b70edd83df41f1"
 
 [[package]]
 name = "i18n-build"
-version = "0.10.3"
+version = "0.10.4"
 dependencies = [
  "anyhow",
  "gettext",
@@ -521,26 +521,26 @@ dependencies = [
  "log",
  "rust-embed",
  "subprocess",
- "thiserror 1.0.69",
+ "thiserror",
  "tr",
  "walkdir",
 ]
 
 [[package]]
 name = "i18n-config"
-version = "0.4.8"
+version = "0.4.9"
 dependencies = [
  "basic-toml",
  "log",
  "serde",
  "serde_derive",
- "thiserror 1.0.69",
+ "thiserror",
  "unic-langid",
 ]
 
 [[package]]
 name = "i18n-embed"
-version = "0.16.0"
+version = "0.16.1"
 dependencies = [
  "arc-swap",
  "doc-comment",
@@ -559,7 +559,7 @@ dependencies = [
  "rust-embed",
  "serial_test",
  "sys-locale",
- "thiserror 1.0.69",
+ "thiserror",
  "tr",
  "unic-langid",
  "walkdir",
@@ -568,7 +568,7 @@ dependencies = [
 
 [[package]]
 name = "i18n-embed-fl"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "dashmap",
  "doc-comment",
@@ -590,7 +590,7 @@ dependencies = [
 
 [[package]]
 name = "i18n-embed-impl"
-version = "0.8.4"
+version = "0.8.5"
 dependencies = [
  "find-crate",
  "i18n-config",
@@ -1196,31 +1196,11 @@ checksum = "83176759e9416cf81ee66cb6508dbfe9c96f20b8b56265a39917551c23c70964"
 
 [[package]]
 name = "thiserror"
-version = "1.0.69"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b6aaf5339b578ea85b50e080feb250a3e8ae8cfcdff9a461c9ec2904bc923f52"
-dependencies = [
- "thiserror-impl 1.0.69",
-]
-
-[[package]]
-name = "thiserror"
 version = "2.0.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f63587ca0f12b72a0600bcba1d40081f830876000bb46dd2337a3051618f4fc8"
 dependencies = [
- "thiserror-impl 2.0.17",
-]
-
-[[package]]
-name = "thiserror-impl"
-version = "1.0.69"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4fee6c4efc90059e10f81e6d42c60a18f76588c3d74cb83a0b242a2b6c7504c1"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
+ "thiserror-impl",
 ]
 
 [[package]]
