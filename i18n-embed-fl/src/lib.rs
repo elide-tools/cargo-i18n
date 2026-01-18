@@ -67,21 +67,16 @@ impl Parse for FlDomain {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         if !input.is_empty() {
             let lookahead = input.fork();
-            let ident = lookahead.parse::<syn::Ident>();
-            if ident.is_err() {
-                return Ok(FlDomain::None);
+            if let Ok(ident) = lookahead.parse::<syn::Ident>() {
+                if ident == "domain" {
+                    input.parse::<syn::Ident>()?;
+                    input.parse::<syn::Token![:]>()?;
+                    let literal = input.parse::<syn::Lit>()?;
+                    return Ok(FlDomain::Domain(literal));
+                }
             }
-            if lookahead.parse::<syn::Ident>()?.to_string() == "domain" {
-                input.parse::<syn::Ident>()?;
-                input.parse::<syn::Token![:]>()?;
-                let literal = input.parse::<syn::Lit>()?;
-                Ok(FlDomain::Domain(literal))
-            } else {
-                Ok(FlDomain::None)
-            }
-        } else {
-            Ok(FlDomain::None)
         }
+        Ok(FlDomain::None)
     }
 }
 
@@ -462,7 +457,6 @@ pub fn fl(input: TokenStream) -> TokenStream {
     } else {
         domain_str
     };
-
     let domain_data = if let Some(domain_data) = domains().get(&domain) {
         domain_data
     } else {
