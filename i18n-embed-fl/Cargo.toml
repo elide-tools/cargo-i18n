@@ -38,4 +38,5 @@ rust-embed = { workspace = true }
 # Uses dashmap implementation for `fl!()` macro lookups.
 dashmap = ["dep:dashmap"]
 domain-from-crate = []
-default = ["domain-from-crate"]
+log = ["i18n-config/log"]
+default = ["domain-from-crate", "log"]

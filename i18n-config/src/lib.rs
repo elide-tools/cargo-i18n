@@ -15,6 +15,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
+#[cfg(feature = "log")]
 use log::{debug, error};
 use serde_derive::Deserialize;
 use thiserror::Error;
@@ -155,11 +156,13 @@ impl<'a> Crate<'a> {
     pub fn active_config(
         &self,
     ) -> Result<Option<(&'_ Crate<'_>, &'_ I18nConfig)>, I18nConfigError> {
+        #[cfg(feature = "log")]
         debug!("Resolving active config for {0}", self);
         match &self.i18n_config {
             Some(config) => {
                 if let Some(gettext_config) = &config.gettext {
                     if gettext_config.extract_to_parent {
+                        #[cfg(feature = "log")]
                         debug!(
                             "Resolving active config for {0}, extract_to_parent is true, so attempting to obtain parent config.",
                             self
@@ -184,6 +187,7 @@ impl<'a> Crate<'a> {
                 Ok(Some((self, config)))
             }
             None => {
+                #[cfg(feature = "log")]
                 debug!(
                     "{0} has no i18n config, attempting to obtain parent config instead.",
                     self
@@ -252,21 +256,28 @@ impl<'a> Crate<'a> {
         {
             Some(parent_path) => match Crate::from(parent_path, None, "i18n.toml") {
                 Ok(parent_crate) => {
+                    #[cfg(feature = "log")]
                     debug!("Found parent ({0}) of {1}.", parent_crate, self);
                     Some(parent_crate)
                 }
                 Err(err) => {
                     match err {
-                        I18nConfigError::NotACrate(path, WhyNotCrate::Workspace) => {
-                            debug!("The parent of {0} at path {1:?} is a workspace", self, path);
+                        I18nConfigError::NotACrate(_path, WhyNotCrate::Workspace) => {
+                            #[cfg(feature = "log")]
+                            debug!(
+                                "The parent of {0} at path {1:?} is a workspace",
+                                self, _path
+                            );
                         }
-                        I18nConfigError::NotACrate(path, WhyNotCrate::NoCargoToml) => {
+                        I18nConfigError::NotACrate(_path, WhyNotCrate::NoCargoToml) => {
+                            #[cfg(feature = "log")]
                             debug!(
                                 "The parent of {0} at path {1:?} is not a valid crate with a Cargo.toml",
-                                self, path
+                                self, _path
                             );
                         }
                         _ => {
+                            #[cfg(feature = "log")]
                             error!(
                                 "Error occurred while attempting to resolve parent of {0}: {1}",
                                 self, err
@@ -289,8 +300,9 @@ impl<'a> Crate<'a> {
                         .any(|subcrate_path| {
                             let subcrate_path_canon = match crt.path.join(subcrate_path).canonicalize() {
                                 Ok(canon) => canon,
-                                Err(err) => {
-                                    error!("Error: unable to canonicalize the subcrate path: {0:?} because {1}", subcrate_path, err);
+                                Err(_err) => {
+                                    #[cfg(feature = "log")]
+                                    error!("Error: unable to canonicalize the subcrate path: {0:?} because {1}", subcrate_path, _err);
                                     return false;
                                 }
                             };
@@ -298,6 +310,7 @@ impl<'a> Crate<'a> {
                             let self_path_canon = match self.path.canonicalize() {
                                 Ok(canon) => canon,
                                 Err(err) => {
+                                    #[cfg(feature = "log")]
                                     error!("Error: unable to canonicalize the crate path: {0:?} because {1}", self.path, err);
                                     return false;
                                 }
@@ -309,6 +322,7 @@ impl<'a> Crate<'a> {
                     if this_is_subcrate {
                         Some(crt)
                     } else {
+                        #[cfg(feature = "log")]
                         debug!(
                             "Parent {0} does not have {1} correctly listed as one of its subcrates (currently: {2:?}) in its i18n config.",
                             crt, self, config.subcrates
@@ -317,11 +331,13 @@ impl<'a> Crate<'a> {
                     }
                 }
                 None => {
+                    #[cfg(feature = "log")]
                     debug!("Parent {0} of {1} does not have an i18n config", crt, self);
                     None
                 }
             },
             None => {
+                #[cfg(feature = "log")]
                 debug!("Could not find a valid parent of {0}.", self);
                 None
             }
