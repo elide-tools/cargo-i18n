@@ -449,7 +449,7 @@ pub fn fl(input: TokenStream) -> TokenStream {
         if !domain_str.is_empty() {
             domain_str
         } else {
-            std::env::var("CARGO_PKG_NAME").expect("Error fetching `CARGO_PKG_NAME` env")
+            std::env::var("CARGO_PKG_NAME").expect("Error fetching `CARGO_PKG_NAME` env").replace('-', "_")
         }
     } else {
         domain_str

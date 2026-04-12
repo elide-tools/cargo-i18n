@@ -14,13 +14,9 @@
 #[cfg(feature = "gettext-system")]
 pub fn gettext_language_loader(_: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let current_crate_package_name =
-        std::env::var("CARGO_PKG_NAME").expect("Error fetching `CARGO_PKG_NAME` env");
+        std::env::var("CARGO_PKG_NAME").expect("Error fetching `CARGO_PKG_NAME` env").replace('-', "_");
 
-    let i18n_embed_crate_name = if current_crate_package_name == "i18n_embed" {
-        "i18n_embed".to_string()
-    } else {
-        "i18n_embed".to_string()
-    };
+    let i18n_embed_crate_name = "i18n_embed".to_string();
 
     let i18n_embed_crate_ident =
         syn::Ident::new(&i18n_embed_crate_name, proc_macro2::Span::call_site());
@@ -80,13 +76,9 @@ pub fn gettext_language_loader(_: proc_macro::TokenStream) -> proc_macro::TokenS
 #[cfg(feature = "fluent-system")]
 pub fn fluent_language_loader(_: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let current_crate_package_name =
-        std::env::var("CARGO_PKG_NAME").expect("Error fetching `CARGO_PKG_NAME` env");
+        std::env::var("CARGO_PKG_NAME").expect("Error fetching `CARGO_PKG_NAME` env").replace('-', "_");
 
-    let i18n_embed_crate_name = if current_crate_package_name == "i18n_embed" {
-        "i18n_embed".to_string()
-    } else {
-        "i18n_embed".to_string()
-    };
+    let i18n_embed_crate_name = "i18n_embed".to_string();
 
     let i18n_embed_crate_ident =
         syn::Ident::new(&i18n_embed_crate_name, proc_macro2::Span::call_site());
