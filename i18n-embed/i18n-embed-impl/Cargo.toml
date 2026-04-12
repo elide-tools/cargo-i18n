@@ -17,7 +17,6 @@ maintenance = { status = "actively-developed" }
 proc-macro = true
 
 [dependencies]
-find-crate = { workspace = true, optional = true }
 i18n-config = { workspace = true, optional = true }
 proc-macro2 = { workspace = true }
 quote = { workspace = true, optional = true }
@@ -32,5 +31,5 @@ features = ["derive", "proc-macro", "parsing", "printing", "extra-traits",]
 
 [features]
 default = []
-gettext-system = ["i18n-config", "find-crate", "quote"]
-fluent-system = ["i18n-config", "find-crate", "quote"]
+gettext-system = ["i18n-config", "quote"]
+fluent-system = ["i18n-config", "quote"]
