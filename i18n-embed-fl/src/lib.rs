@@ -449,10 +449,7 @@ pub fn fl(input: TokenStream) -> TokenStream {
         if !domain_str.is_empty() {
             domain_str
         } else {
-            let manifest = find_crate::Manifest::new().expect("Error reading Cargo.toml");
-            manifest.crate_package().map(|pkg| pkg.name).unwrap_or(
-                std::env::var("CARGO_PKG_NAME").expect("Error fetching `CARGO_PKG_NAME` env"),
-            )
+            std::env::var("CARGO_PKG_NAME").expect("Error fetching `CARGO_PKG_NAME` env")
         }
     } else {
         domain_str
