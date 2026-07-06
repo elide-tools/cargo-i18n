@@ -2,8 +2,7 @@ use fluent::concurrent::FluentBundle;
 use fluent::{FluentAttribute, FluentMessage, FluentResource};
 use fluent_syntax::ast::{CallArguments, Expression, InlineExpression, Pattern, PatternElement};
 use i18n_embed::{FileSystemAssets, LanguageLoader, fluent::FluentLanguageLoader};
-use proc_macro::TokenStream;
-use proc_macro_error2::{abort, emit_error, proc_macro_error};
+use manyhow::{Emitter, ErrorMessage, manyhow};
 use quote::quote;
 use std::{
     collections::{HashMap, HashSet},
@@ -16,7 +15,7 @@ use dashmap::mapref::one::Ref;
 #[cfg(not(feature = "dashmap"))]
 use std::sync::{Arc, RwLock};
 
-use syn::{parse::Parse, parse_macro_input, spanned::Spanned};
+use syn::{parse::Parse, spanned::Spanned};
 use unic_langid::LanguageIdentifier;
 
 #[cfg(doctest)]
@@ -423,11 +422,8 @@ fn domains() -> &'static DomainsMap {
 ///
 /// assert_eq!("Hello \u{2068}Bob\u{2069}'s attribute!", fl!(loader, "hello-arg", "attr", args));
 /// ```
-#[proc_macro]
-#[proc_macro_error]
-pub fn fl(input: TokenStream) -> TokenStream {
-    let input: FlMacroInput = parse_macro_input!(input as FlMacroInput);
-
+#[manyhow(proc_macro)]
+pub fn fl(input: FlMacroInput, emitter: &mut Emitter) -> manyhow::Result<proc_macro2::TokenStream> {
     let fluent_loader = input.fluent_loader;
     let message_id = input.message_id;
     let domain_id = input.domain;
@@ -435,7 +431,7 @@ pub fn fl(input: TokenStream) -> TokenStream {
         FlDomain::Domain(literal) => match literal {
             syn::Lit::Str(string_lit) => string_lit.value(),
             unexpected_lit => {
-                emit_error! {
+                manyhow::emit! { emitter,
                     unexpected_lit,
                     "fl!() `domain` should be a literal rust string"
                 };
@@ -449,7 +445,9 @@ pub fn fl(input: TokenStream) -> TokenStream {
         if !domain_str.is_empty() {
             domain_str
         } else {
-            std::env::var("CARGO_PKG_NAME").expect("Error fetching `CARGO_PKG_NAME` env").replace('-', "_")
+            std::env::var("CARGO_PKG_NAME")
+                .expect("Error fetching `CARGO_PKG_NAME` env")
+                .replace('-', "_")
         }
     } else {
         domain_str
@@ -462,27 +460,29 @@ pub fn fl(input: TokenStream) -> TokenStream {
 
         let config_file_path = &crate_paths.i18n_config_file;
 
-        let config = i18n_config::I18nConfig::from_file(config_file_path).unwrap_or_else(|err| {
-            abort! {
-                proc_macro2::Span::call_site(),
-                format!(
-                    "fl!() had a problem reading i18n config file {config_file_path:?}: {err}"
-                );
-                help = "Try creating the `i18n.toml` configuration file.";
+        let config = match i18n_config::I18nConfig::from_file(config_file_path) {
+            Ok(config) => config,
+            Err(err) => {
+                manyhow::bail! {
+                    proc_macro2::Span::call_site(),
+                    "fl!() had a problem reading i18n config file {config_file_path:?}: {err}";
+                    help = "Try creating the `i18n.toml` configuration file.";
+                }
             }
-        });
+        };
 
-        let fluent_config = config.fluent.unwrap_or_else(|| {
-            abort! {
-                proc_macro2::Span::call_site(),
-                format!(
+        let fluent_config = match config.fluent {
+            Some(fluent_config) => fluent_config,
+            None => {
+                manyhow::bail! {
+                    proc_macro2::Span::call_site(),
                     "fl!() had a problem parsing i18n config file {config_file_path:?}: \
-                    there is no `[fluent]` subsection."
-                );
-                help = "Add the `[fluent]` subsection to `i18n.toml`, \
-                        along with its required `assets_dir`.";
+                    there is no `[fluent]` subsection.";
+                    help = "Add the `[fluent]` subsection to `i18n.toml`, \
+                            along with its required `assets_dir`.";
+                }
             }
-        });
+        };
 
         // Use the domain override in the configuration.
         let domain = fluent_config.domain.unwrap_or(domain);
@@ -494,9 +494,9 @@ pub fn fl(input: TokenStream) -> TokenStream {
 
         let loader = FluentLanguageLoader::new(&domain, fallback_language.clone());
 
-        loader
-            .load_languages(&assets, &[fallback_language.clone()])
-            .unwrap_or_else(|err| match err {
+        match loader.load_languages(&assets, &[fallback_language.clone()]) {
+            Ok(()) => {}
+            Err(err) => match err {
                 i18n_embed::I18nEmbedError::LanguageNotAvailable(file, language_id) => {
                     if fallback_language != language_id {
                         panic!(
@@ -506,13 +506,11 @@ pub fn fl(input: TokenStream) -> TokenStream {
                             language_id, fallback_language
                         )
                     }
-                    abort! {
+                    manyhow::bail! {
                         proc_macro2::Span::call_site(),
-                        format!(
-                            "fl!() was unable to load the localization \
-                            file for the `fallback_language` \
-                            (\"{fallback_language}\"): {file}"
-                        );
+                        "fl!() was unable to load the localization \
+                        file for the `fallback_language` \
+                        (\"{fallback_language}\"): {file}";
                         help = "Try creating the required fluent localization file.";
                     }
                 }
@@ -521,7 +519,8 @@ pub fn fl(input: TokenStream) -> TokenStream {
                         loading language \"{0}\": {1}",
                     fallback_language, err
                 ),
-            });
+            },
+        }
 
         let data = DomainSpecificData {
             loader,
@@ -537,7 +536,7 @@ pub fn fl(input: TokenStream) -> TokenStream {
             Some(message_id_str)
         }
         unexpected_lit => {
-            emit_error! {
+            manyhow::emit! { emitter,
                 unexpected_lit,
                 "fl!() `message_id` should be a literal rust string"
             };
@@ -555,7 +554,7 @@ pub fn fl(input: TokenStream) -> TokenStream {
             }
             unexpected_lit => {
                 attr_str = None;
-                emit_error! {
+                manyhow::emit! { emitter,
                     unexpected_lit,
                     "fl!() `message_id` should be a literal rust string"
                 };
@@ -609,12 +608,15 @@ pub fn fl(input: TokenStream) -> TokenStream {
 
             if attr_lit.is_none() {
                 if let Some(message_id_str) = &message_id_string {
-                    checked_loader_has_message = domain_data
+                    let validation_errors = domain_data
                         .loader
                         .with_fluent_message_and_bundle(message_id_str, |message, bundle| {
-                            check_message_args(message, bundle, &specified_args);
-                        })
-                        .is_some();
+                            check_message_args(message, bundle, &specified_args)
+                        });
+                    if let Some(errors) = validation_errors {
+                        emitter.extend(errors);
+                        checked_loader_has_message = true;
+                    }
                 }
 
                 let r#gen = quote! {
@@ -635,14 +637,16 @@ pub fn fl(input: TokenStream) -> TokenStream {
                             message_id_str,
                             |message, bundle| match message.get_attribute(attr_id_str) {
                                 Some(attr) => {
-                                    check_attribute_args(attr, bundle, &specified_args);
-                                    true
+                                    (true, check_attribute_args(attr, bundle, &specified_args))
                                 }
-                                None => false,
+                                None => (false, Vec::new()),
                             },
                         );
-                        checked_loader_has_message = attr_res.is_some();
-                        checked_message_has_attribute = attr_res.unwrap_or(false);
+                        if let Some((has_attribute, errors)) = attr_res {
+                            emitter.extend(errors);
+                            checked_loader_has_message = true;
+                            checked_message_has_attribute = has_attribute;
+                        }
                     }
                 }
 
@@ -672,19 +676,17 @@ pub fn fl(input: TokenStream) -> TokenStream {
                 {suggestions}"
             );
 
-            emit_error! {
+            manyhow::emit! { emitter,
                 message_id,
-                format!(
-                    "fl!() `message_id` validation failed. `message_id` \
-                    of \"{0}\" does not exist in the `fallback_language` (\"{1}\")",
-                    message_id_str,
-                    domain_data.loader.current_language(),
-                );
+                "fl!() `message_id` validation failed. `message_id` \
+                of \"{0}\" does not exist in the `fallback_language` (\"{1}\")",
+                message_id_str,
+                domain_data.loader.current_language();
                 help = "Enter the correct `message_id` or create \
                         the message in the localization file if the \
                         intended message does not yet exist.";
 
-                hint = hint;
+                hint = "{}", hint;
             };
         } else if let Some(attr_id_str) = &attr_str {
             if !checked_message_has_attribute
@@ -702,25 +704,23 @@ pub fn fl(input: TokenStream) -> TokenStream {
                     {suggestions}"
                 );
 
-                emit_error! {
+                manyhow::emit! { emitter,
                     attr_lit,
-                    format!(
-                        "fl!() `attribute_id` validation failed. `attribute_id` \
-                        of \"{0}\" does not exist in the `fallback_language` (\"{1}\")",
-                        attr_id_str,
-                        domain_data.loader.current_language(),
-                    );
+                    "fl!() `attribute_id` validation failed. `attribute_id` \
+                    of \"{0}\" does not exist in the `fallback_language` (\"{1}\")",
+                    attr_id_str,
+                    domain_data.loader.current_language();
                     help = "Enter the correct `attribute_id` or create \
                             the attribute associated with the message in the localization file if the \
                             intended attribute does not yet exist.";
 
-                    hint = hint;
+                    hint = "{}", hint;
                 };
             }
         }
     }
 
-    r#gen.into()
+    Ok(r#gen)
 }
 
 fn fuzzy_message_suggestions(
@@ -779,9 +779,12 @@ fn check_message_args<R>(
     message: FluentMessage<'_>,
     bundle: &FluentBundle<R>,
     specified_args: &Vec<(syn::LitStr, Box<syn::Expr>)>,
-) where
+) -> Vec<ErrorMessage>
+where
     R: std::borrow::Borrow<FluentResource>,
 {
+    let mut errors = Vec::new();
+
     if let Some(pattern) = message.value() {
         let mut args = Vec::new();
         args_from_pattern(pattern, bundle, &mut args);
@@ -800,13 +803,11 @@ fn check_message_args<R>(
                         .collect::<Vec<String>>()
                         .join(", ");
 
-                    emit_error! {
+                    manyhow::emit! { errors,
                         key,
-                        format!(
-                            "fl!() argument `{0}` does not exist in the \
-                            fluent message. Available arguments: {1}.",
-                            &arg, available_args
-                        );
+                        "fl!() argument `{0}` does not exist in the \
+                        fluent message. Available arguments: {1}.",
+                        &arg, available_args;
                         help = "Enter the correct arguments, or fix the message \
                                 in the fluent localization file so that the arguments \
                                 match this macro invocation.";
@@ -831,27 +832,30 @@ fn check_message_args<R>(
             .collect();
 
         if !unspecified_args.is_empty() {
-            emit_error! {
+            manyhow::emit! { errors,
                 proc_macro2::Span::call_site(),
-                format!(
-                    "fl!() the following arguments have not been specified: {}",
-                    unspecified_args.join(", ")
-                );
+                "fl!() the following arguments have not been specified: {}",
+                unspecified_args.join(", ");
                 help = "Enter the correct arguments, or fix the message \
                         in the fluent localization file so that the arguments \
                         match this macro invocation.";
             };
         }
     }
+
+    errors
 }
 
 fn check_attribute_args<R>(
     attr: FluentAttribute<'_>,
     bundle: &FluentBundle<R>,
     specified_args: &Vec<(syn::LitStr, Box<syn::Expr>)>,
-) where
+) -> Vec<ErrorMessage>
+where
     R: std::borrow::Borrow<FluentResource>,
 {
+    let mut errors = Vec::new();
+
     let pattern = attr.value();
     let mut args = Vec::new();
     args_from_pattern(pattern, bundle, &mut args);
@@ -870,13 +874,11 @@ fn check_attribute_args<R>(
                     .collect::<Vec<String>>()
                     .join(", ");
 
-                emit_error! {
+                manyhow::emit! { errors,
                     key,
-                    format!(
-                        "fl!() argument `{0}` does not exist in the \
-                        fluent attribute. Available arguments: {1}.",
-                        &arg, available_args
-                    );
+                    "fl!() argument `{0}` does not exist in the \
+                    fluent attribute. Available arguments: {1}.",
+                    &arg, available_args;
                     help = "Enter the correct arguments, or fix the attribute \
                             in the fluent localization file so that the arguments \
                             match this macro invocation.";
@@ -901,17 +903,17 @@ fn check_attribute_args<R>(
         .collect();
 
     if !unspecified_args.is_empty() {
-        emit_error! {
+        manyhow::emit! { errors,
             proc_macro2::Span::call_site(),
-            format!(
-                "fl!() the following arguments have not been specified: {}",
-                unspecified_args.join(", ")
-            );
+            "fl!() the following arguments have not been specified: {}",
+            unspecified_args.join(", ");
             help = "Enter the correct arguments, or fix the attribute \
                     in the fluent localization file so that the arguments \
                     match this macro invocation.";
         };
     }
+
+    errors
 }
 
 fn args_from_pattern<'m, R>(
